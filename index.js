@@ -58,7 +58,7 @@ app.get('/auth/discord', (req, res) => {
     const discordAuthUrl =
         `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-        `&response_type=code&scope=guilds+identify`;
+        `&response_type=code&scope=${encodeURIComponent('identify guilds')}`;
     res.redirect(discordAuthUrl);
 });
 
@@ -175,7 +175,6 @@ app.post('/api/servers/:discordServerId/create-code', async (req, res) => {
 app.post('/api/servers/join', async (req, res) => {
     if (!req.session.user) return res.status(401).json({ error: 'Unauthorized' });
     const { access_code } = req.body;
-    console.log()
     if (!access_code) return res.status(400).json({ error: 'Access code required' });
 
     try {
@@ -223,12 +222,11 @@ app.get('/api/servers/joined', async (req, res) => {
         const userId = userRows[0].id;
 
         const { rows } = await db.query(
-            `SELECT s.discord_server_id, s.name FROM servers s
+            `SELECT s.discord_server_id, s.name, s.access_code FROM servers s
             JOIN user_servers us ON s.id = us.server_id
             WHERE us.user_id = $1`,
             [userId]
         );
-
         res.json(rows);
     } catch (err) {
         console.error(err);
