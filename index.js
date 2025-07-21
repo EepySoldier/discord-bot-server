@@ -208,7 +208,7 @@ app.post('/api/servers/join', async (req, res) => {
 
         // Insert join record
         await db.query(
-            'INSERT INTO user_servers (user_id, server_id, is_owner) VALUES ($1, $2, false)',
+            'INSERT INTO user_servers (user_id, server_id) VALUES ($1, $2)',
             [userId, serverId]
         );
 
