@@ -39,9 +39,30 @@ app.get('/api/videos', async (req, res) => {
 
     try {
         const sortOrder = req.query.sort === 'asc' ? 'ASC' : 'DESC';
-        const result = await db.query(
-            `SELECT * FROM videos ORDER BY upload_date ${sortOrder}`
+
+        // Get user ID from DB
+        const { rows: userRows } = await db.query('SELECT id FROM users WHERE discord_user_id = $1', [req.session.user.id]);
+        if (!userRows.length) return res.status(403).json({ error: 'User not found' });
+        const userId = userRows[0].id;
+
+        // Get server IDs user joined
+        const { rows: joinedServers } = await db.query(
+            `SELECT server_id FROM user_servers WHERE user_id = $1`,
+            [userId]
         );
+
+        if (joinedServers.length === 0) {
+            return res.json([]); // No servers joined -> no videos
+        }
+
+        const serverIds = joinedServers.map(s => s.server_id);
+
+        // Fetch videos only from these servers
+        const result = await db.query(
+            `SELECT * FROM videos WHERE server_id = ANY($1) ORDER BY upload_date ${sortOrder}`,
+            [serverIds]
+        );
+
         res.json(result.rows);
     } catch (error) {
         console.error(error);
