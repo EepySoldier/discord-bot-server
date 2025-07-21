@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: 'discord-bot-client-production.up.railway.app', // your React app origin
+    origin: 'http://localhost:5173', // your React app origin
     credentials: true,
 }));
 app.use(express.json());
@@ -105,7 +105,7 @@ app.get('/auth/discord/callback', async (req, res) => {
         }
 
         // Redirect back to frontend
-        res.redirect('discord-bot-client-production.up.railway.app');
+        res.redirect('http://localhost:5173');
     } catch (err) {
         console.error('Discord OAuth error:', err.response?.data || err.message);
         res.status(500).send('OAuth error');
@@ -175,7 +175,7 @@ app.post('/api/servers/:discordServerId/create-code', async (req, res) => {
 app.post('/api/servers/join', async (req, res) => {
     if (!req.session.user) return res.status(401).json({ error: 'Unauthorized' });
     const { access_code } = req.body;
-    console.log(access_code + "qweqwe");
+    console.log()
     if (!access_code) return res.status(400).json({ error: 'Access code required' });
 
     try {
