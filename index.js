@@ -18,10 +18,15 @@ app.use(cors({
 app.use(express.json());
 
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'supersecretkeydfghdfgjdghfdasfgvsedrfgh',
+    name: 'sid',
+    secret: process.env.SESSION_SECRET || 'your_secure_secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'lax' }, // true if https
+    cookie: {
+        httpOnly: true,
+        secure: true,         // must be true for HTTPS
+        sameSite: 'none',     // allow cross-site cookie
+    },
 }));
 
 // Serve static videos
