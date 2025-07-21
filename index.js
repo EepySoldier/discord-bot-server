@@ -16,7 +16,7 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json());
-
+app.set('trust proxy', 1);
 app.use(session({
     name: 'sid',
     secret: process.env.SESSION_SECRET || 'your_secure_secret',
@@ -69,6 +69,7 @@ app.get('/auth/discord', (req, res) => {
 
 // OAuth callback route
 app.get('/auth/discord/callback', async (req, res) => {
+    console.log('Received OAuth callback with code:', req.query.code);
     const code = req.query.code;
     if (!code) return res.status(400).send("No code provided");
 
@@ -108,6 +109,7 @@ app.get('/auth/discord/callback', async (req, res) => {
                 [discordUser.id, discordUser.username]
             );
         }
+        console.log('User logged in:', req.session.user);
 
         // Redirect back to frontend
         res.redirect('https://discord-bot-client-production.up.railway.app');
