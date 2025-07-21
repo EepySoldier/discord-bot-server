@@ -21,7 +21,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'supersecretkeydfghdfgjdghfdasfgvsedrfgh',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: true, sameSite: 'none' }, // true if https
+    cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'lax' }, // true if https
 }));
 
 // Serve static videos
