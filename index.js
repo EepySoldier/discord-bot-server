@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: 'http://localhost:5173', // your React app origin
+    origin: 'https://discord-bot-client-production.up.railway.app', // your React app origin
     credentials: true,
 }));
 app.use(express.json());
@@ -21,7 +21,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'supersecretkeydfghdfgjdghfdasfgvsedrfgh',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }, // true if https
+    cookie: { secure: true, sameSite: 'none' }, // true if https
 }));
 
 // Serve static videos
@@ -50,7 +50,7 @@ app.get('/api/videos', async (req, res) => {
 // Discord OAuth2 config
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
-const REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || 'http://localhost:5000/auth/discord/callback';
+const REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || 'https://discord-bot-server-production.up.railway.app/auth/discord/callback';
 const DISCORD_API_BASE = 'https://discord.com/api';
 
 // Redirect user to Discord OAuth page
@@ -105,7 +105,7 @@ app.get('/auth/discord/callback', async (req, res) => {
         }
 
         // Redirect back to frontend
-        res.redirect('http://localhost:5173');
+        res.redirect('https://discord-bot-client-production.up.railway.app');
     } catch (err) {
         console.error('Discord OAuth error:', err.response?.data || err.message);
         res.status(500).send('OAuth error');
