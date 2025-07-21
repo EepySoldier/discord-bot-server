@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: 'http://localhost:5173', // your React app origin
+    origin: 'discord-bot-client-production.up.railway.app', // your React app origin
     credentials: true,
 }));
 app.use(express.json());
@@ -105,7 +105,7 @@ app.get('/auth/discord/callback', async (req, res) => {
         }
 
         // Redirect back to frontend
-        res.redirect('http://localhost:5173');
+        res.redirect('discord-bot-client-production.up.railway.app');
     } catch (err) {
         console.error('Discord OAuth error:', err.response?.data || err.message);
         res.status(500).send('OAuth error');
