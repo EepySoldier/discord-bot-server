@@ -14,16 +14,17 @@ router.post('/register', async (req, res) => {
         const hashed = await bcrypt.hash(password, 10);
 
         const { rows } = await db.query(
-            `INSERT INTO users (email, username, password_hash)
-             VALUES ($1, $2, $3) RETURNING id, email, username, created_at`,
+            `INSERT INTO users (email, username, password_hash, role)
+             VALUES ($1, $2, $3, 'user')
+                 RETURNING id, email, username, role, created_at`,
             [email, username, hashed]
         );
 
-        // Auto-login after register
         req.session.user = {
             id: rows[0].id,
             email: rows[0].email,
             username: rows[0].username,
+            role: rows[0].role,
         };
 
         res.status(201).json(req.session.user);
