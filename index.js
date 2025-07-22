@@ -42,6 +42,8 @@ const uploadRoutes = require('./upload');
 app.use('/api/upload', uploadRoutes);
 const profilePicRoutes = require('./profilePic');
 app.use('/api/user', profilePicRoutes);
+const videoRoutes = require('./videos');
+app.use('/api/video', videoRoutes)
 
 app.listen(PORT, () => {
     console.log(`✅ Auth backend running on port ${PORT}`);
