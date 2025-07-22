@@ -15,6 +15,7 @@ router.post('/register', async (req, res) => {
     }
 
     try {
+        // Check if email or username taken
         const taken = await db.query(
             `SELECT 1 FROM users WHERE LOWER(email) = $1 OR LOWER(username) = $2`,
             [email, usernameLower]
@@ -24,8 +25,10 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Email or username already exists' });
         }
 
+        // Hash password
         const hashed = await bcrypt.hash(password, 10);
 
+        // Insert user
         const { rows } = await db.query(
             `INSERT INTO users (email, username, password_hash, role)
              VALUES ($1, $2, $3, 'user')
@@ -35,6 +38,25 @@ router.post('/register', async (req, res) => {
 
         const user = rows[0];
 
+        // Find global access code id
+        const { rows: globalRows } = await db.query(
+            `SELECT id FROM access_codes WHERE code = 'global'`
+        );
+
+        if (globalRows.length === 0) {
+            throw new Error('Global access code not found');
+        }
+
+        const globalAccessCodeId = globalRows[0].id;
+
+        // Add user to global access_code_members
+        await db.query(
+            `INSERT INTO access_code_members (user_id, access_code_id)
+             VALUES ($1, $2)`,
+            [user.id, globalAccessCodeId]
+        );
+
+        // Set session
         req.session.user = {
             id: user.id,
             email: user.email,
