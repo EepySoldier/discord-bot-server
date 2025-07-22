@@ -62,7 +62,6 @@ router.post('/login', async (req, res) => {
             email: user.email,
             username: user.username,
         };
-
         res.json(req.session.user);
     } catch (err) {
         console.error(err);
