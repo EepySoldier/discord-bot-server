@@ -5,33 +5,49 @@ const router = express.Router();
 
 // Register
 router.post('/register', async (req, res) => {
-    const { email, username, password } = req.body;
+    const email = req.body.email?.toLowerCase();
+    const username = req.body.username;
+    const usernameLower = username?.toLowerCase();
+    const { password } = req.body;
+
     if (!email || !username || !password) {
         return res.status(400).json({ error: 'All fields required' });
     }
 
     try {
+        const taken = await db.query(
+            `SELECT 1 FROM users WHERE LOWER(email) = $1 OR LOWER(username) = $2`,
+            [email, usernameLower]
+        );
+
+        if (taken.rows.length > 0) {
+            return res.status(400).json({ error: 'Email or username already exists' });
+        }
+
         const hashed = await bcrypt.hash(password, 10);
 
         const { rows } = await db.query(
             `INSERT INTO users (email, username, password_hash, role)
              VALUES ($1, $2, $3, 'user')
-                 RETURNING id, email, username, role, created_at`,
+                 RETURNING id, email, username, role, created_at, profile_pic_url`,
             [email, username, hashed]
         );
 
+        const user = rows[0];
+
         req.session.user = {
-            id: rows[0].id,
-            email: rows[0].email,
-            username: rows[0].username,
-            role: rows[0].role,
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+            created_at: user.created_at,
+            profile_pic_url: user.profile_pic_url,
         };
+
+        req.session.save();
 
         res.status(201).json(req.session.user);
     } catch (err) {
-        if (err.code === '23505') {
-            return res.status(400).json({ error: 'Email or username already exists' });
-        }
         console.error(err);
         res.status(500).json({ error: 'Registration failed' });
     }
@@ -39,14 +55,16 @@ router.post('/register', async (req, res) => {
 
 // Login
 router.post('/login', async (req, res) => {
-    const { emailOrUsername, password } = req.body;
+    const emailOrUsername = req.body.emailOrUsername?.toLowerCase();
+    const { password } = req.body;
+
     if (!emailOrUsername || !password) {
         return res.status(400).json({ error: 'Missing credentials' });
     }
 
     try {
         const { rows } = await db.query(
-            `SELECT * FROM users WHERE email = $1 OR username = $1`,
+            `SELECT id, email, username, role, created_at, profile_pic_url, password_hash FROM users WHERE LOWER(email) = $1 OR LOWER(username) = $1`,
             [emailOrUsername]
         );
 
@@ -62,7 +80,13 @@ router.post('/login', async (req, res) => {
             id: user.id,
             email: user.email,
             username: user.username,
+            role: user.role,
+            created_at: user.created_at,
+            profile_pic_url: user.profile_pic_url,
         };
+
+        req.session.save();
+
         res.json(req.session.user);
     } catch (err) {
         console.error(err);

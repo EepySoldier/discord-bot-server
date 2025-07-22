@@ -4,7 +4,6 @@ const cors = require('cors');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const { pool } = require('./db');
-const authRoutes = require('./auth');
 const cookieParser = require('cookie-parser');
 
 const app = express();
@@ -33,11 +32,16 @@ app.use(session({
 }));
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: process.env.API_CLIENT_URL,
     credentials: true,
 }));
 
+const authRoutes = require('./auth');
 app.use('/api/auth', authRoutes);
+const uploadRoutes = require('./upload');
+app.use('/api/upload', uploadRoutes);
+const profilePicRoutes = require('./profilePic');
+app.use('/api/user', profilePicRoutes);
 
 app.listen(PORT, () => {
     console.log(`✅ Auth backend running on port ${PORT}`);
