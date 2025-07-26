@@ -18,6 +18,7 @@ app.use(session({
     store: new pgSession({
         pool: pool,
         tableName: 'user_sessions',
+        pruneSessionInterval: 60 * 60
     }),
     name: 'sid',
     secret: process.env.SESSION_SECRET || 'your_secret',
