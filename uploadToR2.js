@@ -11,15 +11,25 @@ const uploadClient = new S3Client({
     }
 });
 
-function getContentType(filename, mimetype) {
+function getContentType(filename, mimetype = '') {
     const ext = path.extname(filename).toLowerCase();
 
-    if (ext === '.mp4' || mimetype.startsWith('video/')) return 'video/mp4';
-    if (ext === '.jpg' || ext === '.jpeg' || mimetype === 'image/jpeg') return 'image/jpeg';
-    if (ext === '.png' || mimetype === 'image/png') return 'image/png';
-    if (ext === '.gif' || mimetype === 'image/gif') return 'image/gif';
-
-    return mimetype || 'application/octet-stream';
+    switch (true) {
+        case ext === '.mp4':
+        case mimetype.startsWith('video/'):
+            return 'video/mp4';
+        case ['.jpg', '.jpeg'].includes(ext):
+        case mimetype === 'image/jpeg':
+            return 'image/jpeg';
+        case ext === '.png':
+        case mimetype === 'image/png':
+            return 'image/png';
+        case ext === '.gif':
+        case mimetype === 'image/gif':
+            return 'image/gif';
+        default:
+            return mimetype || 'application/octet-stream';
+    }
 }
 
 async function uploadToR2(localPath, r2Key, mimetype) {
@@ -37,4 +47,8 @@ async function uploadToR2(localPath, r2Key, mimetype) {
     return `${process.env.R2_PUBLIC_DOMAIN}/${r2Key}`;
 }
 
-module.exports = { uploadToR2, uploadClient, DeleteObjectCommand };
+module.exports = {
+    uploadToR2,
+    uploadClient,
+    DeleteObjectCommand
+};
