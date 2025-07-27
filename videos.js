@@ -7,7 +7,12 @@ router.get('/fetchAll', async (req, res) => {
     const userId = req.session.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
+    // parse pagination params
+    const limit = parseInt(req.query.limit, 10) || 9;
+    const offset = parseInt(req.query.offset, 10) || 0;
+
     try {
+        // fetch the access codes the user belongs to
         const { rows: codes } = await db.query(`
             SELECT access_code_id
             FROM access_code_members
@@ -15,8 +20,11 @@ router.get('/fetchAll', async (req, res) => {
         `, [userId]);
 
         const codeIds = codes.map(r => r.access_code_id);
-        if (codeIds.length === 0) return res.json([]);
+        if (codeIds.length === 0) {
+            return res.json({ videos: [], hasMore: false });
+        }
 
+        // paginated video fetch
         const { rows: videos } = await db.query(`
             SELECT
                 v.id,
@@ -28,15 +36,19 @@ router.get('/fetchAll', async (req, res) => {
                 (SELECT COUNT(*) FROM video_likes WHERE video_id = v.id)        AS likes,
                 EXISTS (
                     SELECT 1 FROM video_likes
-                    WHERE video_id = v.id AND user_id = $2
-                )                                                              AS liked_by_me
+                    WHERE video_id = v.id AND user_id = $3
+                ) AS liked_by_me
             FROM videos v
                      JOIN users u ON u.id = v.uploader_id
             WHERE v.access_code_id = ANY($1::uuid[])
             ORDER BY v.uploaded_at DESC
-        `, [codeIds, userId]);
+                LIMIT $2
+            OFFSET $4
+        `, [codeIds, limit, userId, offset]);
 
-        res.json(videos);
+        // determine if more remain
+        const hasMore = videos.length === limit;
+        res.json({ videos, hasMore });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch videos' });
@@ -145,6 +157,30 @@ router.get('/liked', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch liked clips' });
+    }
+});
+
+router.delete('/:videoId', async (req, res) => {
+    const userId = req.session.user?.id;
+    const userRole = req.session.user?.role;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    if (userRole !== 'admin') return res.status(403).json({ error: 'Forbidden' });
+
+    const { videoId } = req.params;
+    try {
+        const { rowCount } = await db.query(
+            `DELETE FROM videos WHERE id = $1`,
+            [videoId]
+        );
+
+        if (rowCount === 0) {
+            return res.status(404).json({ error: 'Video not found' });
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Failed to delete video', err);
+        res.status(500).json({ error: 'Failed to delete video' });
     }
 });
 
