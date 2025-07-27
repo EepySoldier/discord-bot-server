@@ -122,4 +122,30 @@ router.post('/:videoId/like', async (req, res) => {
     }
 });
 
+router.get('/liked', async (req, res) => {
+    const userId = req.session.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    try {
+        const { rows } = await db.query(`
+      SELECT
+        v.id, v.title, v.file_url, v.uploaded_at,
+        u.username AS uploader,
+        (SELECT COUNT(*) FROM video_views WHERE video_id = v.id) AS views,
+        (SELECT COUNT(*) FROM video_likes WHERE video_id = v.id) AS likes,
+        TRUE AS liked_by_me
+      FROM videos v
+      JOIN users u ON u.id = v.uploader_id
+      JOIN video_likes l ON l.video_id = v.id
+      WHERE l.user_id = $1
+      ORDER BY l.liked_at DESC
+    `, [userId]);
+
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch liked clips' });
+    }
+});
+
 module.exports = router;
